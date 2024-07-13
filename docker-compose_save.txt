@@ -1,0 +1,89 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_container
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./requirements/mysql/tools/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks :
+      - amiral_gestion
+
+  web:
+    build: requirements/flask
+    container_name: flask_container
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    volumes:
+      - ./requirements/flask:/app
+    networks :
+      - amiral_gestion
+
+networks:
+  amiral_gestion:
+    name : amiral_gestion
+    driver: bridge
+
+volumes:
+  db_data:
+
+
+  import yfinance as yf
+from flask_mysqldb import MySQL
+
+# Suponiendo que 'mysql' es una instancia de MySQL ya configurada
+def populate_data():
+    funds = ['SPY', 'VTI']
+    instruments = ['AAPL', 'MSFT']
+
+    # Connection to database
+    cursor = mysql.connection.cursor()
+
+    # Inserting funds in database from yfinance
+    for fund_ticker in funds:
+        fund = yf.Ticker(fund_ticker)
+        info = fund.info
+
+        new_fund = Fund(
+            name=info.get('longName', 'N/A'),
+            description=info.get('longBusinessSummary', 'N/A'),
+            creation_date=info.get('fundInceptionDate', None),  # Cambié a 'fundInceptionDate'
+            assets_under_management=info.get('totalAssets', 0)
+        )
+
+        print(new_fund)
+        cursor.execute("INSERT INTO referentiel_fonds (name, description, creation_date, assets_under_management) VALUES (%s, %s, %s, %s)",
+                       (new_fund.name, new_fund.description, new_fund.creation_date, new_fund.assets_under_management))
+
+    # Inserting instruments in database from yfinance
+    for instrument_ticker in instruments:
+        instrument = yf.Ticker(instrument_ticker)
+        info = instrument.info
+
+        new_instrument = Instrument(
+            type=info.get('quoteType', 'N/A'),
+            ticker=instrument_ticker,
+            nominal_value=info.get('previousClose', 0),
+            issue_date=info.get('ipoDate', None),
+            maturity_date=None,  # Asumí que no todos los instrumentos tienen fecha de vencimiento
+            interest_rate=info.get('interestRate', 0),
+            option_type=info.get('optionType', None),
+            underlying_asset=info.get('underlying', None)
+        )
+
+        print(new_instrument)
+        cursor.execute("INSERT INTO referentiel_instruments (type, ticker, nominal_value, issue_date, maturity_date, interest_rate, option_type, underlying_asset) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                       (new_instrument.type, new_instrument.ticker, new_instrument.nominal_value, new_instrument.issue_date, new_instrument.maturity_date, new_instrument.interest_rate, new_instrument.option_type, new_instrument.underlying_asset))
+
+    # Commit the changes and close the cursor
+    mysql.connection.commit()
+    cursor.close()

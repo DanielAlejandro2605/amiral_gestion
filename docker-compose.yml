@@ -2,18 +2,21 @@ services:
   db:
     image: mysql:8.0
     container_name: mysql_container
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./requirements/mysql/tools/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks :
+      - amiral_gestion
 
   web:
     build: requirements/flask
     container_name: flask_container
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env
     ports:
@@ -22,6 +25,13 @@ services:
       - db
     volumes:
       - ./requirements/flask:/app
+    networks :
+      - amiral_gestion
+
+networks:
+  amiral_gestion:
+    name : amiral_gestion
+    driver: bridge
 
 volumes:
   db_data:

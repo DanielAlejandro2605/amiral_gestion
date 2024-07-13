@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template
-from flask import jsonify
-import yfinance as yf
+
 
 bp = Blueprint('main', __name__)
 

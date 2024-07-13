@@ -1,23 +1,26 @@
-FROM python:3.8-slim-buster
+FROM python:3.10.8-slim-bullseye
 
-# Set the working directory
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    default-mysql-client \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy the requirements file into the container
 COPY ./requirements.txt requirements.txt
 
-# Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+COPY ./tools/entry-point.sh /usr/local/bin/entry-point.sh
+RUN chmod +x /usr/local/bin/entry-point.sh
+
 COPY ./app /app
 
-# Set the environment variable for Flask
 ENV FLASK_APP=app
 ENV FLASK_ENV=development
 
-# Expose port 5000 for the Flask app
 EXPOSE 5000
 
-# Run the Flask app
-CMD ["flask", "run", "--debug","--host=0.0.0.0"]
+ENTRYPOINT ["entry-point.sh"]
