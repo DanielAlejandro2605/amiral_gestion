@@ -13,7 +13,7 @@ services:
     networks :
       - amiral_gestion
 
-  web:
+  backend:
     build: requirements/flask
     container_name: flask_container
     restart: unless-stopped
@@ -26,6 +26,18 @@ services:
     volumes:
       - ./requirements/flask:/app
     networks :
+      - amiral_gestion
+
+  frontend:
+      build : requirements/js
+      container_name : js_container
+      restart: unless-stopped
+      env_file : .env
+      ports:
+        - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+      depends_on:
+        - db
+      networks :
       - amiral_gestion
 
 networks:
