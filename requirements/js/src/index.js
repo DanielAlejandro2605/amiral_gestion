@@ -13,7 +13,6 @@ window.addEventListener("popstate", () => {
 window.addEventListener("onpopstate", () => {
     router();
 });
-m-shell
 
 let scene, camera, renderer, particles;
 

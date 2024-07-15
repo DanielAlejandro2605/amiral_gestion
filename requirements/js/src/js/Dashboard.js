@@ -33,7 +33,6 @@ export class Dashboard extends BaseClass {
 
     async handleButtonClick(event) {
         event.preventDefault();
-        
         const fund = document.getElementById("fundSelect").value;
         const instrument = document.getElementById("instrumentSelect").value;
         const positionQuantity = parseFloat(document.getElementById("position-quantity").value);

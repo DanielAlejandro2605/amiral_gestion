@@ -226,23 +226,27 @@ def get_positions():
         cursor.execute(query_positions, (user_id,))
         positions = cursor.fetchall()
 
-        if positions is not None:
-
+        if positions:
             # Getting the id's
             fund_ids = {position[1] for position in positions}
             instrument_ids = {position[2] for position in positions}
 
-            # Getting name of funds
-            query_funds = "SELECT id, name FROM referentiel_fonds WHERE id IN (%s)" % ','.join(['%s'] * len(fund_ids))
-            cursor.execute(query_funds, tuple(fund_ids))
-            funds = cursor.fetchall()
-            fund_dict = {fund[0]: fund[1] for fund in funds}
+            fund_dict = {}
+            instrument_dict = {}
 
-            # Getting the tickets from instruments
-            query_instruments = "SELECT id, ticker FROM referentiel_instruments WHERE id IN (%s)" % ','.join(['%s'] * len(instrument_ids))
-            cursor.execute(query_instruments, tuple(instrument_ids))
-            instruments = cursor.fetchall()
-            instrument_dict = {instrument[0]: instrument[1] for instrument in instruments}
+            # Getting name of funds if there are any fund_ids
+            if fund_ids:
+                query_funds = "SELECT id, name FROM referentiel_fonds WHERE id IN (%s)" % ','.join(['%s'] * len(fund_ids))
+                cursor.execute(query_funds, tuple(fund_ids))
+                funds = cursor.fetchall()
+                fund_dict = {fund[0]: fund[1] for fund in funds}
+
+            # Getting the tickets from instruments if there are any instrument_ids
+            if instrument_ids:
+                query_instruments = "SELECT id, ticker FROM referentiel_instruments WHERE id IN (%s)" % ','.join(['%s'] * len(instrument_ids))
+                cursor.execute(query_instruments, tuple(instrument_ids))
+                instruments = cursor.fetchall()
+                instrument_dict = {instrument[0]: instrument[1] for instrument in instruments}
 
             positions_list = []
             for position in positions:
@@ -257,7 +261,7 @@ def get_positions():
                 positions_list.append(position_dict)
             return jsonify(positions_list), 200
         else:
-            return jsonify({}), 200
+            return jsonify([]), 200
 
     except mysql.connector.Error as err:
         print(f"Error: {err}")

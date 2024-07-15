@@ -109,6 +109,10 @@ export const router = async () => {
     /*Getting view*/
     const viewObject = routes[matchedRoute];
 
+    if (previousView && typeof previousView.cleanup === 'function') {
+        previousView.cleanup();
+    }
+
     if (!viewObject) {
         const errorView = new ErrorClass();
         appDiv.innerHTML = await errorView.getHtmlForMainNotFound();
@@ -124,6 +128,8 @@ export const router = async () => {
     }
     
     const view = new viewObject.view();
+    /*Saving previous for cleanup event listeners*/
+    previousView = view;
  
     if (viewObject.css) {
         await loadCss(viewObject.css);
