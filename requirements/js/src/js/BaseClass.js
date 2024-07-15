@@ -3,7 +3,6 @@ export class BaseClass {
         if (this.constructor === BaseClass) {
             throw new Error("Cannot instantiate abstract class.");
         }
-        // this.httpProtocol = window.location.protocol;
         this.httpProtocol = process.env.PROTOCOL;
         this.host = process.env.HOST_IN_USE;
         this.backendPort = process.env.BACKEND_PORT;
@@ -15,23 +14,34 @@ export class BaseClass {
     }
 
     addDocumentClickListener() {
-        // //console.log("BaseClass adding eventListener");
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         document.getElementById('app').addEventListener('click', this.handleDocumentClickBound);
     }
 
     removeDocumentClickListener() {
-        // //console.log("BaseClass removing eventListener");
         document.getElementById('app').removeEventListener('click', this.handleDocumentClickBound);
     }
 
     async handleDocumentClick(event) {
-        // //console.log("BaseClass handleDocumentClick");
         return;
     }
 
     cleanup() {
-        // //console.log("BaseClass cleanup");
         this.removeDocumentClickListener();
+    }
+
+    setNavBarNotAuthenticated(){
+        const navbar = document.getElementById('nav-bar');
+        navbar.innerHTML = `<a class="navbar-link" href="/register">Sign up</a>
+                            <a class="navbar-link" href="/login">Log in</a>`;
+    }
+
+    setNavBarAuthenticated(){
+        const navbar = document.getElementById('nav-bar');
+        navbar.innerHTML = `<a class="navbar-link" href="/positions">My positions</a>
+                            <a class="navbar-link" href="/funds">Funds</a>
+                            <a class="navbar-link" href="/dashboard">Dashboard</a>
+                            <a class="navbar-link" href="/instruments">Instruments</a>
+                            <a class="navbar-link" href="/logout">Log out</a>`;
     }
 }

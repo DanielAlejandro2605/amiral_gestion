@@ -1,48 +1,55 @@
 import { LandingPage } from './LandingPage.js'
 import { Login } from './Login.js'
 import { Register } from './Register.js'
-import { Profile } from './Profile.js'
-import { Settings } from './Settings.js'
-import { Dashboard } from './Dashboard.js';
+import { Dashboard } from './Dashboard.js'
+import { Funds } from './Funds.js';
+import { Instruments } from './Instruments.js'
+import { UserPositions } from './UserPositions.js'
 import { Logout } from './Logout.js';
 import { ErrorClass } from './ErrorClass.js'
-import Navbar from './Navbar.js';
 import jwt_decode from 'jwt-decode';
 
 export const routes = {
     '/' : {
         path : '/',
         view : LandingPage,
-        auth : false
+        auth : false,
+        css  : './css/index.css'
     },
-    '/dashboard' : {
-        path : '/dashboard',
-        view : Dashboard,
-        css : './css/dashboard.css',
-        auth : true
+    '/register' : {
+        path : '/register',
+        view : Register,
+        auth : false,
+        css  : './css/index.css'
     },
     '/login' : {
         path : '/login',
         view : Login,
         auth : false,
-        css : './css/login.css'
+        css  : './css/index.css'
     },
-    '/register' : {
-        path : '/register',
-        view : Register,
-        auth : false
-    },
-    '/profile' : {
-        path : '/profile',
-        view : Profile,
+    '/dashboard' : {
+        path : '/dashboard',
+        view : Dashboard,
         auth : true,
-        css : './css/profile.css'
+        css  : './css/index.css'
     },
-    '/settings' : {
-        path : '/settings',
-        view : Settings,
+    '/funds' : {
+        path : '/funds',
+        view : Funds,
         auth : true,
-        css : './css/settings.css'
+        css  : './css/index.css'
+    },
+    '/instruments' : {
+        path : '/instruments',
+        view : Instruments,
+        auth : true,
+        css  : './css/index.css'
+    },
+    '/positions' : {
+        path : '/positions',
+        view : UserPositions,
+        auth : true
     },
     '/logout' : {
         path : '/logout',
@@ -79,65 +86,6 @@ function findMatchingRoute(url) {
 let previousView = null;
 let styleCss = null;
 
-export const router = async () => {
-    const appDiv = document.getElementById('app');
-    appDiv.style = 'display: none;';
-
-    const path = window.location.pathname;
-    const matchedRoute = findMatchingRoute(path);
-    const viewObject = routes[matchedRoute];
-
-    let id = null;
-
-    if (previousView && typeof previousView.cleanup === 'function') {
-        previousView.cleanup();
-    }
-
-    if (styleCss) {
-        styleCss.remove();
-        styleCss = null;
-    }
-
-    const token = localStorage.getItem('token');
-    const auth = await checkAuthentication();
-    if (auth)
-        await connectUser();
-
-    if (!viewObject) {
-        const errorView = new ErrorClass();
-        navbar.setIsAuthenticated(auth);
-        document.getElementById('nav-bar').innerHTML = navbar.getHtml();
-        appDiv.innerHTML = await errorView.getHtmlForMainNotFound();
-        appDiv.style = 'display: block;';
-        return;
-    }
-
-    if (viewObject.auth === true && (!token || auth === false)) {
-        navigateTo("/");
-        return;
-    } else if (viewObject.auth === false && (token && auth === true)) {
-        navigateTo("/dashboard");
-        return;
-    }
-
-    if (viewObject.dinamic == true)
-    {
-        id = path.split('/')[2];
-    }
-    
-    const view = new viewObject.view(id);
-    previousView = view;
-
-    if (viewObject.css) {
-        await loadCss(viewObject.css);
-    }
-
-    appDiv.innerHTML = await view.getHtmlForMain();
-    (viewObject.path === '/logout') ? navbar.setIsAuthenticated(false) : navbar.setIsAuthenticated(auth);
-    document.getElementById('nav-bar').innerHTML = navbar.getHtml();
-    appDiv.style = 'display: block;';
-}
-
 function loadCss(url) {
     return new Promise((resolve, reject) => {
         styleCss = document.createElement('link');
@@ -150,66 +98,56 @@ function loadCss(url) {
     });
 }
 
-async function checkAuthentication() {
-    //console.log("checking authentication (Router.js)");
-    const httpProtocol = process.env.PROTOCOL;
 
-    try {
-        const token = localStorage.getItem('token');
+export const router = async () => {
+    const appDiv = document.getElementById('app');
+   
+    /*Window path*/
+    const path = window.location.pathname;
+    /*Getting correct route*/
+    const matchedRoute = findMatchingRoute(path);
+    /*Getting view*/
+    const viewObject = routes[matchedRoute];
 
-        if (!token) {
-            throw false;
-        }
-
-        let decodedToken;
-        try {
-            decodedToken = jwt_decode(token);
-        } catch (decodeError) {
-            console.error('Error decoding token:', decodeError.message);
-            throw false;
-        }
-
-        const response = await fetch(`${httpProtocol}://${process.env.HOST_IN_USE}:${process.env.BACKEND_PORT}/users/check-authentication/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            // console.error('Error checking authentication:', response.statusText);
-            throw false;
-        }
-
-        const data = await response.json();
-
-        if ('authenticated' in data) {
-            return data.authenticated;
-        } else {
-            // console.error('Invalid response format:', data);
-            throw false;
-        }
-    } catch (error) {
-        // console.error('Unexpected error checking authentication:', error);
-        return false;
+    if (!viewObject) {
+        const errorView = new ErrorClass();
+        appDiv.innerHTML = await errorView.getHtmlForMainNotFound();
+        appDiv.style = 'display: block;';
+        return;
     }
+
+    const user_id = localStorage.getItem('userId');
+
+    if (viewObject.auth === true && user_id === null) {
+        navigateTo('/');
+        return;
+    }
+    
+    const view = new viewObject.view();
+ 
+    if (viewObject.css) {
+        await loadCss(viewObject.css);
+    }
+
+
+    if (viewObject.path === '/logout'){
+        localStorage.removeItem('userId');
+        navigateTo('/');
+        return;
+    }
+
+    appDiv.innerHTML = await view.getHtmlForMain();
 }
 
-let navbar = new Navbar();
+// let navbar = new Navbar();
 
 document.addEventListener('DOMContentLoaded', () => {
-    //console.log("DOM content loaded (Router.js)");
     router();
-    // document.getElementById('nav-bar').innerHTML = navbar.getHtml();
-    document.getElementById("bellButton").addEventListener("click", function() {
-        var bellCountSpan = document.getElementById("bellCount");
-        bellCountSpan.textContent = "";
-    });
     document.getElementById('nav-bar').addEventListener('click', (event) => {
-        if (event.target.tagName === 'A' && event.target.classList.contains('navbar-link')) {
-            //console.log('LISTENER (Router.js) navbar button clicked: ', event.target);
+        if (event.target.tagName === 'A' && event.target.classList.contains('navbar-link'))
+        {
             event.preventDefault();
+            console.log(event.target);
             navigateTo(event.target);
         }
     }); 
